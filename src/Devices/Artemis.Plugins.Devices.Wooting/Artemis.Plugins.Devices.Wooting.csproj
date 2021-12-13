@@ -1,28 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0-windows</TargetFramework>
-    <ShouldIncludeNativeSkiaSharp>false</ShouldIncludeNativeSkiaSharp>
-    <AssemblyName>Artemis.Plugins.Devices.Wooting</AssemblyName>
-    <RootNamespace>Artemis.Plugins.Devices.Wooting</RootNamespace>
+    <TargetFramework>net5.0</TargetFramework>
     <Platforms>x64</Platforms>
-    <GenerateDependencyFile>False</GenerateDependencyFile>
+    <EnableDynamicLoading>True</EnableDynamicLoading>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-    <CopyLocalLockFileAssemblies>True</CopyLocalLockFileAssemblies>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="x86\**" />
-    <EmbeddedResource Remove="x86\**" />
-    <None Remove="x86\**" />
-    <Page Remove="x86\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="plugin.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Artemis.Core">
@@ -36,11 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="x64\wooting-rgb-sdk64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="RGB.NET.Core">
       <HintPath>..\..\..\..\RGB.NET\bin\net5.0\RGB.NET.Core.dll</HintPath>
       <Private>false</Private>
@@ -49,54 +26,14 @@
       <HintPath>..\..\..\..\RGB.NET\bin\net5.0\RGB.NET.Devices.Wooting.dll</HintPath>
     </Reference>
   </ItemGroup>
+  
   <ItemGroup>
-    <None Update="Images\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Layouts\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Content Include="Layouts\**" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="x64\wooting-rgb-sdk64.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-	<ItemGroup>
-		<PluginJson Include="plugin.json" />
-	</ItemGroup>
-
-	<UsingTask TaskName="GetPluginPath" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildBinPath)\Microsoft.Build.Tasks.Core.dll">
-		<ParameterGroup>
-			<AssemblyName ParameterType="System.String" Required="true" />
-			<Json ParameterType="System.String" Required="true" />
-			<PluginPath ParameterType="System.String" Output="true" />
-		</ParameterGroup>
-		<Task>
-			<Using Namespace="System" />
-			<Using Namespace="System.IO" />
-			<Using Namespace="System.Text.RegularExpressions" />
-			<Code Type="Fragment" Language="C#">
-				<![CDATA[
-				Match guidMatch = Regex.Match(Json, "\"Guid\": \"([^\"]+)\"");
-				string guid = guidMatch.Groups.Count > 1 ? guidMatch.Groups[1].Value.Substring(0, 8) : "ffffffff";
-				PluginPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Artemis", "plugins", AssemblyName + "-" + guid);
-				]]>
-			</Code>
-		</Task>
-	</UsingTask>
-
-  <!-- Copy the plugin files to the Artemis plugin directory -->
-  <Target Name="PostBuildCopy" AfterTargets="PostBuildEvent" Condition="'$(BuildingInsideVisualStudio)' == 'true'">
-    <!-- Determine the file path based on plugin.json contents -->
-    <ReadLinesFromFile File="@(PluginJson)">
-      <Output TaskParameter="Lines" ItemName="JsonContents" />
-    </ReadLinesFromFile>
-    <GetPluginPath AssemblyName="$(AssemblyName)" Json="@(JsonContents)">
-      <Output TaskParameter="PluginPath" PropertyName="PluginPath" />
-    </GetPluginPath>
-
-    <ItemGroup>
-      <BuildFiles Include="$(TargetDir)\**\*.*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(BuildFiles)" DestinationFolder="$(PluginPath)\%(RecursiveDir)" SkipUnchangedFiles="true" />
-    <Message Text="Placed debug build in file:\\$(PluginPath)" Importance="High" />
-    <Message Text="To share your plugin with others, use 'dotnet publish'" Importance="High" />
-  </Target>
+  <ItemGroup>
+    <Content Include="plugin.json" CopyToOutputDirectory="PreserveNewest" />
+    <PackageReference Include="ArtemisRGB.Plugins.BuildTask" Version="1.1.0" />
+  </ItemGroup>
 </Project>
